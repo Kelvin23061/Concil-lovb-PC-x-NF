@@ -14,7 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      conciliacao_itens: {
+        Row: {
+          caixas_nota: number | null
+          caixas_pedido: number | null
+          conciliacao_id: string
+          created_at: string
+          descricao_nota: string | null
+          descricao_pedido: string | null
+          dif_caixas: number | null
+          dif_unidades: number | null
+          dun: string | null
+          ean: string | null
+          embalagem_nota: string | null
+          embalagem_pedido: string | null
+          id: string
+          situacao: string
+          unidades_nota: number | null
+          unidades_pedido: number | null
+          user_id: string
+        }
+        Insert: {
+          caixas_nota?: number | null
+          caixas_pedido?: number | null
+          conciliacao_id: string
+          created_at?: string
+          descricao_nota?: string | null
+          descricao_pedido?: string | null
+          dif_caixas?: number | null
+          dif_unidades?: number | null
+          dun?: string | null
+          ean?: string | null
+          embalagem_nota?: string | null
+          embalagem_pedido?: string | null
+          id?: string
+          situacao: string
+          unidades_nota?: number | null
+          unidades_pedido?: number | null
+          user_id: string
+        }
+        Update: {
+          caixas_nota?: number | null
+          caixas_pedido?: number | null
+          conciliacao_id?: string
+          created_at?: string
+          descricao_nota?: string | null
+          descricao_pedido?: string | null
+          dif_caixas?: number | null
+          dif_unidades?: number | null
+          dun?: string | null
+          ean?: string | null
+          embalagem_nota?: string | null
+          embalagem_pedido?: string | null
+          id?: string
+          situacao?: string
+          unidades_nota?: number | null
+          unidades_pedido?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conciliacao_itens_conciliacao_id_fkey"
+            columns: ["conciliacao_id"]
+            isOneToOne: false
+            referencedRelation: "conciliacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conciliacoes: {
+        Row: {
+          created_at: string
+          id: string
+          itens_conformes: number
+          itens_divergentes: number
+          nf_chave: string | null
+          nf_cnpj: string | null
+          nf_emissao: string | null
+          nf_emitente: string | null
+          nf_numero: string | null
+          nf_serie: string | null
+          nf_valor_total: number | null
+          pedido_emissao: string | null
+          pedido_fornecedor: string | null
+          pedido_numero: string | null
+          total_itens: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          itens_conformes?: number
+          itens_divergentes?: number
+          nf_chave?: string | null
+          nf_cnpj?: string | null
+          nf_emissao?: string | null
+          nf_emitente?: string | null
+          nf_numero?: string | null
+          nf_serie?: string | null
+          nf_valor_total?: number | null
+          pedido_emissao?: string | null
+          pedido_fornecedor?: string | null
+          pedido_numero?: string | null
+          total_itens?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          itens_conformes?: number
+          itens_divergentes?: number
+          nf_chave?: string | null
+          nf_cnpj?: string | null
+          nf_emissao?: string | null
+          nf_emitente?: string | null
+          nf_numero?: string | null
+          nf_serie?: string | null
+          nf_valor_total?: number | null
+          pedido_emissao?: string | null
+          pedido_fornecedor?: string | null
+          pedido_numero?: string | null
+          total_itens?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
