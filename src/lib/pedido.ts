@@ -89,14 +89,14 @@ export function parsePedidoTexto(texto: string): Pedido {
     if (inicio) {
       if (atual) throw new Error("Há um produto sem EAN no pedido. Verifique o PDF completo.");
       const fator = inicio[5] ? numBr(inicio[5]) : 1;
-      const numeros = Array.from(inicio[7].matchAll(/-?[\d.]+,\d{2,4}/g)).map((m) => numBr(m[0]));
+      const numeros = Array.from((inicio[7] ?? "").matchAll(/-?[\d.]+,\d{2,4}/g)).map((m) => numBr(m[0]));
       atual = {
-        seq: inicio[2] ?? inicio[1],
-        descricao: inicio[3].trim(),
+        seq: inicio[2] ?? inicio[1] ?? "",
+        descricao: (inicio[3] ?? "").trim(),
         ean: null,
-        embalagem: `${inicio[4].toUpperCase()}${fator > 1 ? ` ${fator}` : ""}`,
+        embalagem: `${(inicio[4] ?? "").toUpperCase()}${fator > 1 ? ` ${fator}` : ""}`,
         embalagemFator: fator > 0 ? fator : 1,
-        quantidade: numBr(inicio[6]),
+        quantidade: numBr(inicio[6] ?? "0"),
         valorUnitario: numeros[1] ?? 0,
       };
       continue;

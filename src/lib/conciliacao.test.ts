@@ -1,4 +1,5 @@
-import { expect, test } from "bun:test";
+import { test } from "node:test";
+import assert from "node:assert/strict";
 import { conciliar } from "./conciliacao";
 import type { NotaFiscal } from "./nfe";
 import type { Pedido } from "./pedido";
@@ -12,6 +13,7 @@ test("prioriza EAN sobre DUN e compara caixas e unidades", () => {
     { seq: "2", descricao: "Outro", ean: "17896013568527", embalagem: "CX 12", embalagemFator: 12, quantidade: 9, valorUnitario: 1 },
   ] };
   const resultado = conciliar(nota, pedido);
-  expect(resultado.itens[0]).toMatchObject({ situacao: "conforme", caixasNota: 3, caixasPedido: 3, unidadesNota: 18, unidadesPedido: 18 });
-  expect(resultado.itens[1]?.situacao).toBe("so_no_pedido");
+  assert.equal(resultado.itens[0]?.situacao, "conforme");
+  assert.deepEqual([resultado.itens[0]?.caixasNota, resultado.itens[0]?.caixasPedido, resultado.itens[0]?.unidadesNota, resultado.itens[0]?.unidadesPedido], [3, 3, 18, 18]);
+  assert.equal(resultado.itens[1]?.situacao, "so_no_pedido");
 });

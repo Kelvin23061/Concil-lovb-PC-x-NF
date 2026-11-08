@@ -1,4 +1,5 @@
-import { expect, test } from "bun:test";
+import { test } from "node:test";
+import assert from "node:assert/strict";
 import { parsePedidoTexto } from "./pedido";
 
 const texto = `PEDIDO DE COMPRAS 247678 / L
@@ -16,16 +17,16 @@ Data da emissão 03/09/2026`;
 
 test("lê embalagem e quantidade antes do EAN no pedido Concinco", () => {
   const pedido = parsePedidoTexto(texto);
-  expect(pedido.numero).toBe("247678/L");
-  expect(pedido.itens.map((i) => [i.ean, i.embalagem, i.quantidade, i.valorUnitario])).toEqual([
+  assert.equal(pedido.numero, "247678/L");
+  assert.deepEqual(pedido.itens.map((i) => [i.ean, i.embalagem, i.quantidade, i.valorUnitario]), [
     ["7896013568520", "CX 6", 3, 89.1],
     ["7896013569817", "CX 12", 2, 129.12],
   ]);
-  expect(pedido.itens[0]?.descricao).toBe("CREME NOVEX 1KG INF COLAG 6852");
-  expect(pedido.fornecedor).toBe("DOARBELLEZA PRODUTOS DE BELEZA- FILIAL");
-  expect(pedido.valorTotal).toBe(525.54);
+  assert.equal(pedido.itens[0]?.descricao, "CREME NOVEX 1KG INF COLAG 6852");
+  assert.equal(pedido.fornecedor, "DOARBELLEZA PRODUTOS DE BELEZA- FILIAL");
+  assert.equal(pedido.valorTotal, 525.54);
 });
 
 test("não aceita EAN sem linha de quantidade reconhecida", () => {
-  expect(() => parsePedidoTexto("EANs: 7896013568520")).toThrow();
+  assert.throws(() => parsePedidoTexto("EANs: 7896013568520"));
 });
