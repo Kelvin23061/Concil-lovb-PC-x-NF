@@ -69,11 +69,11 @@ const capturar = (texto: string, re: RegExp) => texto.match(re)?.[1]?.trim() ?? 
 
 /** Interpreta o texto do pedido de compras (modelo Concinco / TOTVS). */
 export function parsePedidoTexto(texto: string): Pedido {
-  const plano = texto.replace(/\n/g, " \n ");
   const linear = texto.replace(/\s*\n\s*/g, " ");
 
-  const numero = capturar(linear, /PEDIDO DE COMPRAS\s+(\d+\s*\/?\s*[A-Z]?)/i).replace(/\s+/g, "");
-  const fornecedor = capturar(plano, /R\.?\s*Social\s+(.+?)(?:\s*\n|\s{2,}Endere)/i);
+  const numero = capturar(linear, /PEDIDO DE COMPRAS\s+(\d+(?:\s*\/\s*[A-Z])?)/i).replace(/\s+/g, "");
+  // A primeira coluna é o fornecedor; a segunda contém o comprador.
+  const fornecedor = capturar(texto, /R\.?\s*Social\s+([^\n]+?)(?=\s+R\.?\s*Social|\n|$)/i);
   const cnpj = soDigitos(capturar(linear, /CNPJ\s*([\d.\-/\s]{14,25})/i));
   const dataEmissao = capturar(linear, /Data da emiss[aã]o\s*(\d{2}\/\d{2}\/\d{4})/i);
   const emissao = dataEmissao
@@ -82,42 +82,36 @@ export function parsePedidoTexto(texto: string): Pedido {
   const valorTotal = numBr(capturar(linear, /Valor total do pedido\s*([\d.,]+)/i) || "0");
 
   const itens: PedidoItem[] = [];
-  const reEan = /EANs?\s*:?\s*(\d{8,14})/gi;
-  let match: RegExpExecArray | null;
-  let anterior = 0;
-
-  while ((match = reEan.exec(linear)) !== null) {
-    const antes = linear.slice(anterior, match.index);
-    const depois = linear.slice(match.index + match[0].length, match.index + match[0].length + 160);
-    anterior = match.index + match[0].length;
-
-    const seqMatch = antes.match(/(\d{4,8})(?!.*\d{4,8})\s*([^\d]*)$/);
-    const seq = seqMatch?.[1] ?? "";
-    let descricao = (seqMatch ? antes.slice(antes.lastIndexOf(seq) + seq.length) : antes)
-      .replace(/\s+/g, " ")
-      .trim();
-    if (descricao.length > 120) descricao = descricao.slice(-120).trim();
-
-    const emb = depois.match(/\b([A-Z]{2,4})\s*(\d+(?:[.,]\d+)?)?\b/);
-    const embalagemSigla = emb?.[1] ?? "";
-    const embalagemFator = emb?.[2] ? numBr(emb[2]) : 1;
-    const embalagem = embalagemSigla
-      ? `${embalagemSigla}${embalagemFator > 1 ? " " + String(embalagemFator) : ""}`
-      : "";
-
-    const restante = emb ? depois.slice((emb.index ?? 0) + emb[0].length) : depois;
-    const numeros = Array.from(restante.matchAll(/-?[\d.]*\d,\d{2,4}/g)).map((m) => numBr(m[0]));
-
-    itens.push({
-      seq,
-      descricao,
-      ean: soDigitos(match[1]),
-      embalagem,
-      embalagemFator: embalagemFator > 0 ? embalagemFator : 1,
-      quantidade: numeros[0] ?? 0,
-      valorUnitario: numeros[2] ?? 0,
-    });
+  let atual: PedidoItem | null = null;
+  for (const linha of texto.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)) {
+    // O EAN vem abaixo do produto; embalagem e valores ficam na linha inicial.
+    const inicio = linha.match(/^(\d{4,8})(?:\s+(\d{1,3}))?\s+(.+?)\s+(CX|FD|UN|UND|PC|PCT|LT|KG|SC|DZ|PT)\s*(\d+(?:[.,]\d+)?)?\s+(-?[\d.]+,\d{2,4})\s+(.+)$/i);
+    if (inicio) {
+      if (atual) throw new Error("Há um produto sem EAN no pedido. Verifique o PDF completo.");
+      const fator = inicio[5] ? numBr(inicio[5]) : 1;
+      const numeros = Array.from(inicio[7].matchAll(/-?[\d.]+,\d{2,4}/g)).map((m) => numBr(m[0]));
+      atual = {
+        seq: inicio[2] ?? inicio[1],
+        descricao: inicio[3].trim(),
+        ean: null,
+        embalagem: `${inicio[4].toUpperCase()}${fator > 1 ? ` ${fator}` : ""}`,
+        embalagemFator: fator > 0 ? fator : 1,
+        quantidade: numBr(inicio[6]),
+        valorUnitario: numeros[1] ?? 0,
+      };
+      continue;
+    }
+    const ean = linha.match(/EANs?\s*:?\s*(\d{8,14})/i);
+    if (ean) {
+      if (!atual) throw new Error("Não foi possível identificar a embalagem e a quantidade de um produto do pedido.");
+      atual.ean = soDigitos(ean[1]);
+      itens.push(atual);
+      atual = null;
+    } else if (atual && !/^(PEDIDO DE|Cod Forn|TOTAIS|FORNECEDOR)/i.test(linha)) {
+      atual.descricao += ` ${linha}`;
+    }
   }
+  if (atual) throw new Error("Há um produto sem EAN no pedido. Verifique o PDF completo.");
 
   return { numero, fornecedor, cnpj, emissao, valorTotal, itens };
 }

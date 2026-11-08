@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileCode2, FileText, History, Loader2, ScanSearch } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,12 +54,15 @@ function Pagina() {
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [historico, setHistorico] = useState<Conferencia[]>([]);
   const [aba, setAba] = useState("conferencia");
+  const leituraXml = useRef(0);
+  const leituraPdf = useRef(0);
 
   useEffect(() => {
     setHistorico(listarHistorico());
   }, []);
 
   async function receberXml(file: File | null) {
+    const leitura = ++leituraXml.current;
     setResultado(null);
     setErroXml(null);
     setXml(file);
@@ -67,25 +70,30 @@ function Pagina() {
     if (!file) return;
     try {
       const texto = await file.text();
-      setNota(parseNotaXml(texto));
+      if (leitura === leituraXml.current) setNota(parseNotaXml(texto));
     } catch (e) {
-      setErroXml(e instanceof Error ? e.message : "Não foi possível ler o XML.");
+      if (leitura === leituraXml.current) setErroXml(e instanceof Error ? e.message : "Não foi possível ler o XML.");
     }
   }
 
   async function receberPdf(file: File | null) {
+    const leitura = ++leituraPdf.current;
     setResultado(null);
     setErroPdf(null);
     setPdf(file);
     setPedido(null);
-    if (!file) return;
+    if (!file) {
+      setProcessando(false);
+      return;
+    }
     try {
       setProcessando(true);
-      setPedido(await lerPedidoPdf(file));
+      const lido = await lerPedidoPdf(file);
+      if (leitura === leituraPdf.current) setPedido(lido);
     } catch (e) {
-      setErroPdf(e instanceof Error ? e.message : "Não foi possível ler o PDF do pedido.");
+      if (leitura === leituraPdf.current) setErroPdf(e instanceof Error ? e.message : "Não foi possível ler o PDF do pedido.");
     } finally {
-      setProcessando(false);
+      if (leitura === leituraPdf.current) setProcessando(false);
     }
   }
 
@@ -93,8 +101,8 @@ function Pagina() {
     if (!nota || !pedido) return;
     const res = conciliar(nota, pedido);
     setResultado(res);
-    const salvo = salvarConferencia({ nota, pedido, resultado: res });
-    setHistorico((atual) => [salvo, ...atual]);
+    salvarConferencia({ nota, pedido, resultado: res });
+    setHistorico(listarHistorico());
     toast.success(
       res.divergentes
         ? `${res.divergentes} divergência(s) encontrada(s) em ${res.totalItens} itens.`
@@ -103,6 +111,11 @@ function Pagina() {
   }
 
   function abrirDoHistorico(c: Conferencia) {
+    ++leituraXml.current;
+    ++leituraPdf.current;
+    setProcessando(false);
+    setErroXml(null);
+    setErroPdf(null);
     setNota(c.nota);
     setPedido(c.pedido);
     setResultado(c.resultado);
@@ -129,7 +142,7 @@ function Pagina() {
       </header>
 
       <main className="relative mx-auto max-w-7xl space-y-6 px-4 py-6">
-        <Tabs value={aba} onValueChange={setAba}>
+        <Tabs value={aba} onValueChange={(valor) => { setAba(valor); if (valor === "historico") setHistorico(listarHistorico()); }}>
           <TabsList>
             <TabsTrigger value="conferencia">
               <ScanSearch className="mr-2 size-4" />

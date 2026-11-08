@@ -227,10 +227,11 @@ export function TabelaItens({ itens }: { itens: ItemConciliado[] }) {
       <div className="space-y-2 lg:hidden">
         {visiveis.map((i, idx) => (
           <div key={`${i.ean ?? "s"}-m-${idx}`} className="rounded-xl border bg-card p-3 shadow-sm">
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-sm font-medium leading-tight">{i.descricaoNota ?? i.descricaoPedido ?? "—"}</p>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <p className="min-w-0 flex-1 basis-40 break-words text-sm font-medium leading-tight">{i.descricaoNota ?? i.descricaoPedido ?? "—"}</p>
               <Etiqueta situacao={i.situacao} />
             </div>
+            {i.descricaoNota && i.descricaoPedido ? <p className="mt-1 break-words text-xs text-muted-foreground">Pedido: {i.descricaoPedido}</p> : null}
             <p className="mt-1 font-mono text-xs text-muted-foreground">
               {i.ean ?? "—"}
               {i.dun ? ` · DUN ${i.dun}` : ""}
@@ -277,7 +278,10 @@ function FiltroBotao({
   children: React.ReactNode;
 }) {
   return (
-    <button
+    <Button
+      variant="outline"
+      size="sm"
+      aria-pressed={ativo}
       onClick={onClick}
       className={cn(
         "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
@@ -287,6 +291,6 @@ function FiltroBotao({
       )}
     >
       {children}
-    </button>
+    </Button>
   );
 }
