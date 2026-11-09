@@ -22,6 +22,15 @@ export type ItemConciliado = {
   difCaixas: number | null;
   difUnidades: number | null;
   situacao: Situacao;
+  // Detalhamento do item (tela de detalhe)
+  seqNota: number | null;
+  seqPedido: string | null;
+  codigoNota: string | null;
+  unidadeTrib: string | null;
+  valorUnitarioNota: number | null;
+  valorTotalNota: number | null;
+  valorUnitarioPedido: number | null;
+  valorTotalPedido: number | null;
 };
 
 export type Resultado = {
@@ -98,6 +107,14 @@ export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
         difCaixas: null,
         difUnidades: null,
         situacao: "so_na_nota",
+        seqNota: nItem.seq,
+        seqPedido: null,
+        codigoNota: nItem.codigo,
+        unidadeTrib: nItem.unidadeTrib,
+        valorUnitarioNota: nItem.qtdTributavel > 0 ? arred(nItem.valorTotal / nItem.qtdTributavel) : null,
+        valorTotalNota: arred(nItem.valorTotal),
+        valorUnitarioPedido: null,
+        valorTotalPedido: null,
       });
       continue;
     }
@@ -132,6 +149,14 @@ export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
       difCaixas,
       difUnidades,
       situacao,
+      seqNota: nItem.seq,
+      seqPedido: pItem.seq,
+      codigoNota: nItem.codigo,
+      unidadeTrib: nItem.unidadeTrib,
+      valorUnitarioNota: nItem.qtdTributavel > 0 ? arred(nItem.valorTotal / nItem.qtdTributavel) : null,
+      valorTotalNota: arred(nItem.valorTotal),
+      valorUnitarioPedido: arred(pItem.valorUnitario),
+      valorTotalPedido: arred(pItem.quantidade * pItem.valorUnitario),
     });
   }
 
@@ -152,6 +177,14 @@ export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
       difCaixas: null,
       difUnidades: null,
       situacao: "so_no_pedido",
+      seqNota: null,
+      seqPedido: pItem.seq,
+      codigoNota: null,
+      unidadeTrib: null,
+      valorUnitarioNota: null,
+      valorTotalNota: null,
+      valorUnitarioPedido: arred(pItem.valorUnitario),
+      valorTotalPedido: arred(pItem.quantidade * pItem.valorUnitario),
     });
   }
 

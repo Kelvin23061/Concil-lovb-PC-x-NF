@@ -10,6 +10,9 @@ import {
   type ItemConciliado,
   type Situacao,
 } from "@/lib/conciliacao";
+import { DetalheItem } from "@/components/DetalheItem";
+import type { NotaFiscal } from "@/lib/nfe";
+import type { Pedido } from "@/lib/pedido";
 
 const ordem: Situacao[] = [
   "qtd_divergente",
@@ -59,9 +62,19 @@ function Par({
   );
 }
 
-export function TabelaItens({ itens }: { itens: ItemConciliado[] }) {
+export function TabelaItens({
+  itens,
+  nota,
+  pedido,
+}: {
+  itens: ItemConciliado[];
+  nota: NotaFiscal | null;
+  pedido: Pedido | null;
+}) {
   const [filtro, setFiltro] = useState<Situacao | "todos">("todos");
   const [busca, setBusca] = useState("");
+  const [selecionado, setSelecionado] = useState<number | null>(null);
+  const itemSelecionado = selecionado !== null ? (itens[selecionado] ?? null) : null;
 
   const contagem = useMemo(() => {
     const mapa = new Map<Situacao, number>();
@@ -173,7 +186,12 @@ export function TabelaItens({ itens }: { itens: ItemConciliado[] }) {
           </thead>
           <tbody>
             {visiveis.map((i, idx) => (
-              <tr key={`${i.ean ?? "s"}-${idx}`} className="border-t transition-colors hover:bg-accent/30">
+              <tr
+                key={`${i.ean ?? "s"}-${idx}`}
+                onClick={() => setSelecionado(itens.indexOf(i))}
+                className="cursor-pointer border-t transition-colors hover:bg-accent/30"
+                title="Clique para ver o detalhe do item"
+              >
                 <td className="max-w-[22rem] px-3 py-2">
                   <p className="truncate font-medium" title={i.descricaoNota ?? ""}>
                     {i.descricaoNota ?? "—"}
@@ -226,7 +244,11 @@ export function TabelaItens({ itens }: { itens: ItemConciliado[] }) {
       {/* Fichas no celular */}
       <div className="space-y-2 lg:hidden">
         {visiveis.map((i, idx) => (
-          <div key={`${i.ean ?? "s"}-m-${idx}`} className="rounded-xl border bg-card p-3 shadow-sm">
+          <div
+            key={`${i.ean ?? "s"}-m-${idx}`}
+            onClick={() => setSelecionado(itens.indexOf(i))}
+            className="cursor-pointer rounded-xl border bg-card p-3 shadow-sm transition-colors hover:bg-accent/30"
+          >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <p className="min-w-0 flex-1 basis-40 break-words text-sm font-medium leading-tight">{i.descricaoNota ?? i.descricaoPedido ?? "—"}</p>
               <Etiqueta situacao={i.situacao} />
@@ -264,6 +286,15 @@ export function TabelaItens({ itens }: { itens: ItemConciliado[] }) {
           </p>
         ) : null}
       </div>
+
+      <DetalheItem
+        item={itemSelecionado}
+        indice={selecionado ?? 0}
+        total={itens.length}
+        nota={nota}
+        pedido={pedido}
+        onFechar={() => setSelecionado(null)}
+      />
     </div>
   );
 }
