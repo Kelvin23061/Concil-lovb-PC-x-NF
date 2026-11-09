@@ -10,6 +10,9 @@ import {
   type ItemConciliado,
   type Situacao,
 } from "@/lib/conciliacao";
+import { DetalheItem } from "@/components/DetalheItem";
+import type { NotaFiscal } from "@/lib/nfe";
+import type { Pedido } from "@/lib/pedido";
 
 const ordem: Situacao[] = [
   "qtd_divergente",
@@ -59,9 +62,19 @@ function Par({
   );
 }
 
-export function TabelaItens({ itens }: { itens: ItemConciliado[] }) {
+export function TabelaItens({
+  itens,
+  nota,
+  pedido,
+}: {
+  itens: ItemConciliado[];
+  nota: NotaFiscal | null;
+  pedido: Pedido | null;
+}) {
   const [filtro, setFiltro] = useState<Situacao | "todos">("todos");
   const [busca, setBusca] = useState("");
+  const [selecionado, setSelecionado] = useState<number | null>(null);
+  const itemSelecionado = selecionado !== null ? (itens[selecionado] ?? null) : null;
 
   const contagem = useMemo(() => {
     const mapa = new Map<Situacao, number>();
