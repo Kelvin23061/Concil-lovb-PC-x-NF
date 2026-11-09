@@ -22,6 +22,15 @@ export type ItemConciliado = {
   difCaixas: number | null;
   difUnidades: number | null;
   situacao: Situacao;
+  // Detalhamento do item (tela de detalhe)
+  seqNota: number | null;
+  seqPedido: string | null;
+  codigoNota: string | null;
+  unidadeTrib: string | null;
+  valorUnitarioNota: number | null;
+  valorTotalNota: number | null;
+  valorUnitarioPedido: number | null;
+  valorTotalPedido: number | null;
 };
 
 export type Resultado = {
