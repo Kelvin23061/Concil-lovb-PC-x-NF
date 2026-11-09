@@ -220,7 +220,7 @@ function Pagina() {
             {resultado && nota ? (
               <div className="space-y-5">
                 <CartoesResumo resultado={resultado} valorNota={nota.valorTotal} />
-                <TabelaItens itens={resultado.itens} />
+                <TabelaItens itens={resultado.itens} nota={nota} pedido={pedido} />
               </div>
             ) : (
               <div className="rounded-xl border border-dashed bg-card p-10 text-center">
