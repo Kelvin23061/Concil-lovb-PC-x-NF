@@ -61,7 +61,9 @@ function LinhaComparacao({
         {fmt(nota, dec)}
       </td>
       <td className={cn("px-3 py-2 text-right font-mono text-sm tabular-nums", divergente && "font-semibold text-destructive")}>
-        {diferenca === null ? "—" : `${diferenca > 0 ? "+" : ""}${fmt(diferenca, dec)}`}
+        {diferenca === null
+          ? "—"
+          : `${diferenca > 0 ? "+" : ""}${fmt(diferenca === 0 ? 0 : diferenca, dec)}`}
       </td>
     </tr>
   );
@@ -69,13 +71,14 @@ function LinhaComparacao({
 
 export function DetalheItem({ item, indice, total, nota, pedido, onFechar }: Props) {
   const aberto = item !== null;
+  // Diferença sempre no sentido Pedido − Nota, como no relatório de referência.
   const difUnit =
     item?.valorUnitarioNota != null && item?.valorUnitarioPedido != null
-      ? Math.round((item.valorUnitarioNota - item.valorUnitarioPedido) * 1000) / 1000
+      ? Math.round((item.valorUnitarioPedido - item.valorUnitarioNota) * 1000) / 1000
       : null;
   const difTotal =
     item?.valorTotalNota != null && item?.valorTotalPedido != null
-      ? Math.round((item.valorTotalNota - item.valorTotalPedido) * 100) / 100
+      ? Math.round((item.valorTotalPedido - item.valorTotalNota) * 100) / 100
       : null;
   const TOL = 0.001;
 
