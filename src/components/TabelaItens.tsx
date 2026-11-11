@@ -88,7 +88,7 @@ export function TabelaItens({
       .filter((i) => (filtro === "todos" ? true : i.situacao === filtro))
       .filter((i) =>
         termo
-          ? [i.ean, i.dun, i.descricaoNota, i.descricaoPedido]
+           ? [i.ean, i.dun, i.codigoNota, i.seqPedido, i.descricaoNota, i.descricaoPedido]
               .filter(Boolean)
               .some((v) => String(v).toLowerCase().includes(termo))
           : true,
@@ -98,6 +98,8 @@ export function TabelaItens({
 
   function exportar() {
     const cab = [
+      "Codigo interno nota",
+      "Codigo interno pedido",
       "EAN",
       "DUN",
       "Descricao nota",
@@ -116,6 +118,8 @@ export function TabelaItens({
     ];
     const linhas = itens.map((i) =>
       [
+        i.codigoNota ?? "",
+        i.seqPedido ?? "",
         i.ean ?? "",
         i.dun ?? "",
         i.descricaoNota ?? "",
@@ -165,7 +169,8 @@ export function TabelaItens({
             <Input
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar EAN ou descrição"
+               placeholder="Buscar código, EAN ou descrição"
+               aria-label="Buscar código interno, EAN ou descrição"
               className="pl-8"
             />
           </div>
@@ -181,6 +186,7 @@ export function TabelaItens({
           <thead className="bg-secondary/60 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="px-3 py-2 text-left font-semibold">Produto</th>
+              <th className="px-3 py-2 text-left font-semibold">Código interno</th>
               <th className="px-3 py-2 text-left font-semibold">EAN / DUN</th>
               <th className="px-3 py-2 text-left font-semibold">Embalagem</th>
               <th className="px-3 py-2 text-right font-semibold">Caixas</th>
@@ -206,7 +212,11 @@ export function TabelaItens({
                     Pedido: {i.descricaoPedido ?? "—"}
                   </p>
                 </td>
-                <td className="px-3 py-2 font-mono text-xs">
+                 <td className="px-3 py-2 text-xs">
+                   <p className="whitespace-nowrap"><span className="text-muted-foreground">Nota: </span><span className="font-mono">{i.codigoNota || "—"}</span></p>
+                   <p className="whitespace-nowrap"><span className="text-muted-foreground">Pedido: </span><span className="font-mono">{i.seqPedido || "—"}</span></p>
+                 </td>
+                 <td className="px-3 py-2 font-mono text-xs">
                   <p>{i.ean ?? "—"}</p>
                   {i.dun ? <p className="text-muted-foreground">DUN {i.dun}</p> : null}
                 </td>
@@ -266,6 +276,16 @@ export function TabelaItens({
               <Etiqueta situacao={i.situacao} />
             </div>
             {i.descricaoNota && i.descricaoPedido ? <p className="mt-1 break-words text-xs text-muted-foreground">Pedido: {i.descricaoPedido}</p> : null}
+            <dl className="mt-2 grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <dt className="text-muted-foreground">Código interno · Nota</dt>
+                <dd className="break-all font-mono">{i.codigoNota || "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Código interno · Pedido</dt>
+                <dd className="break-all font-mono">{i.seqPedido || "—"}</dd>
+              </div>
+            </dl>
             <p className="mt-1 font-mono text-xs text-muted-foreground">
               {i.ean ?? "—"}
               {i.dun ? ` · DUN ${i.dun}` : ""}

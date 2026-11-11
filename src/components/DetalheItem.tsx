@@ -132,7 +132,7 @@ export function DetalheItem({ item, indice, total, nota, pedido, onFechar }: Pro
                   {item.dun ? <Barcode className="ml-auto size-4 text-muted-foreground" /> : null}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                  <Campo rotulo="Código do produto" valor={item.codigoNota} />
+                  <Campo rotulo="Código interno" valor={item.codigoNota} />
                   <Campo rotulo="Embalagem (un. comercial)" valor={item.embalagemNota} />
                   <Campo
                     rotulo="EAN / EAN trib."
