@@ -4,6 +4,8 @@ export type PedidoItem = {
   seq: string;
   descricao: string;
   ean: string | null;
+  /** Todos os códigos de barras do item no pedido. */
+  gtins?: string[];
   embalagem: string;
   embalagemFator: number;
   quantidade: number;
@@ -105,6 +107,8 @@ export function parsePedidoTexto(texto: string): Pedido {
     if (ean) {
       if (!atual) throw new Error("Não foi possível identificar a embalagem e a quantidade de um produto do pedido.");
       atual.ean = soDigitos(ean[1]);
+      const todos = Array.from(linha.matchAll(/\b\d{8,14}\b/g)).map((m) => soDigitos(m[0]));
+      atual.gtins = Array.from(new Set(todos));
       itens.push(atual);
       atual = null;
     } else if (atual && !/^(PEDIDO DE|Cod Forn|TOTAIS|FORNECEDOR)/i.test(linha)) {

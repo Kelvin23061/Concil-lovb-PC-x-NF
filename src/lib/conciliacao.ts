@@ -8,7 +8,17 @@ export type Situacao =
   | "so_na_nota"
   | "so_no_pedido";
 
+export type Criterio = "codigo_barras" | "referencia" | "descricao";
+
+export const rotuloCriterio: Record<Criterio, string> = {
+  codigo_barras: "Código de barras",
+  referencia: "Referência",
+  descricao: "Descrição",
+};
+
 export type ItemConciliado = {
+  /** Como o item da nota foi ligado ao pedido. */
+  criterio?: Criterio | null;
   ean: string | null;
   dun: string | null;
   descricaoNota: string | null;
@@ -76,20 +86,93 @@ function quantidadesNota(item: NotaItem, fatorPedido: number) {
   return { caixas: item.qtdComercial, unidades: item.qtdComercial, fator: 1 };
 }
 
-export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
-  const porEan = new Map<string, PedidoItem>();
-  for (const item of pedido.itens) {
-    const chave = normalizaGtin(item.ean);
-    if (chave) porEan.set(chave, item);
-  }
+const gtinsNota = (i: NotaItem) =>
+  Array.from(new Set([i.ean, i.dun, ...(i.gtins ?? [])].map(normalizaGtin).filter(Boolean)));
+const gtinsPedido = (i: PedidoItem) =>
+  Array.from(new Set([i.ean, ...(i.gtins ?? [])].map(normalizaGtin).filter(Boolean)));
 
+const semAcento = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+const palavras = (v: string | null | undefined) =>
+  new Set(semAcento(v ?? "").split(/[^A-Z0-9]+/).filter((w) => w.length >= 2));
+
+/** Semelhança entre descrições (0 a 1), pela proporção de palavras em comum. */
+export function semelhancaDescricao(a: string | null | undefined, b: string | null | undefined) {
+  const pa = palavras(a);
+  const pb = palavras(b);
+  if (pa.size === 0 || pb.size === 0) return 0;
+  let comuns = 0;
+  for (const w of pa) if (pb.has(w)) comuns++;
+  return comuns / Math.min(pa.size, pb.size);
+}
+
+const LIMIAR_DESCRICAO = 0.7;
+
+function referenciaConfere(n: NotaItem, p: PedidoItem) {
+  const ref = semAcento(n.codigo ?? "").replace(/^0+/, "");
+  if (ref.length < 3) return false;
+  if (semAcento(p.seq).replace(/^0+/, "") === ref) return true;
+  return Array.from(palavras(p.descricao)).some((w) => w.replace(/^0+/, "") === ref);
+}
+
+/**
+ * Liga cada item da nota a um item do pedido: primeiro por qualquer código de
+ * barras (EAN/DUN, inclusive quando há mais de um), depois pela referência e,
+ * por fim, pela descrição.
+ */
+function vincular(nota: NotaFiscal, pedido: Pedido) {
+  const livres = new Set(pedido.itens);
+  const vinculo = new Map<NotaItem, { item: PedidoItem; criterio: Criterio }>();
+
+  const porGtin = new Map<string, PedidoItem[]>();
+  for (const p of pedido.itens)
+    for (const g of gtinsPedido(p)) porGtin.set(g, [...(porGtin.get(g) ?? []), p]);
+
+  for (const n of nota.itens) {
+    // EAN antes do DUN quando a nota traz os dois.
+    for (const g of gtinsNota(n).sort((a, b) => (a.length === 14 ? 1 : 0) - (b.length === 14 ? 1 : 0))) {
+      const p = (porGtin.get(g) ?? []).find((x) => livres.has(x));
+      if (p) {
+        vinculo.set(n, { item: p, criterio: "codigo_barras" });
+        livres.delete(p);
+        break;
+      }
+    }
+  }
+  for (const n of nota.itens) {
+    if (vinculo.has(n)) continue;
+    const p = Array.from(livres).find((x) => referenciaConfere(n, x));
+    if (p) {
+      vinculo.set(n, { item: p, criterio: "referencia" });
+      livres.delete(p);
+    }
+  }
+  for (const n of nota.itens) {
+    if (vinculo.has(n)) continue;
+    let melhor: PedidoItem | null = null;
+    let nota_ = 0;
+    for (const p of livres) {
+      const s = semelhancaDescricao(n.descricao, p.descricao);
+      if (s > nota_) {
+        nota_ = s;
+        melhor = p;
+      }
+    }
+    if (melhor && nota_ >= LIMIAR_DESCRICAO) {
+      vinculo.set(n, { item: melhor, criterio: "descricao" });
+      livres.delete(melhor);
+    }
+  }
+  return vinculo;
+}
+
+export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
+  const vinculo = vincular(nota, pedido);
   const usados = new Set<PedidoItem>();
   const itens: ItemConciliado[] = [];
 
   for (const nItem of nota.itens) {
-    const chaveEan = normalizaGtin(nItem.ean);
-    const chaveDun = normalizaGtin(nItem.dun);
-    const pItem = (chaveEan ? porEan.get(chaveEan) : undefined) ?? (chaveDun ? porEan.get(chaveDun) : undefined);
+    const v = vinculo.get(nItem);
+    const pItem = v?.item;
 
     if (!pItem) {
       const q = quantidadesNota(nItem, 1);
@@ -107,6 +190,7 @@ export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
         difCaixas: null,
         difUnidades: null,
         situacao: "so_na_nota",
+        criterio: null,
         seqNota: nItem.seq,
         seqPedido: null,
         codigoNota: nItem.codigo,
@@ -149,6 +233,7 @@ export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
       difCaixas,
       difUnidades,
       situacao,
+      criterio: v?.criterio ?? null,
       seqNota: nItem.seq,
       seqPedido: pItem.seq,
       codigoNota: nItem.codigo,
@@ -177,6 +262,7 @@ export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
       difCaixas: null,
       difUnidades: null,
       situacao: "so_no_pedido",
+      criterio: null,
       seqNota: null,
       seqPedido: pItem.seq,
       codigoNota: null,

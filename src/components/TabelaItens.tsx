@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   corSituacao,
   fmt,
+  rotuloCriterio,
   rotuloSituacao,
   type ItemConciliado,
   type Situacao,
@@ -194,6 +195,7 @@ export function TabelaItens({
               <th className="px-3 py-2 text-right font-semibold">Unitário pedido (R$)</th>
               <th className="px-3 py-2 text-right font-semibold">Total pedido (R$)</th>
               <th className="px-3 py-2 text-left font-semibold">Situação</th>
+              <th className="px-3 py-2 text-right font-semibold"><span className="sr-only">Detalhe</span></th>
             </tr>
           </thead>
           <tbody>
@@ -253,6 +255,21 @@ export function TabelaItens({
                 </td>
                 <td className="px-3 py-2">
                   <Etiqueta situacao={i.situacao} />
+                  {i.criterio ? (
+                    <p className="mt-1 whitespace-nowrap text-[11px] text-muted-foreground">Por {rotuloCriterio[i.criterio].toLowerCase()}</p>
+                  ) : null}
+                </td>
+                <td className="px-3 py-2 text-right">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelecionado(itens.indexOf(i));
+                    }}
+                  >
+                    <Eye className="size-4" /> Ver
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -273,8 +290,21 @@ export function TabelaItens({
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
               <p className="min-w-0 flex-1 basis-40 break-words text-sm font-medium leading-tight">{i.descricaoNota ?? i.descricaoPedido ?? "—"}</p>
-              <Etiqueta situacao={i.situacao} />
+              <div className="flex items-center gap-2">
+                <Etiqueta situacao={i.situacao} />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelecionado(itens.indexOf(i));
+                  }}
+                >
+                  <Eye className="size-4" /> Ver
+                </Button>
+              </div>
             </div>
+            {i.criterio ? <p className="mt-1 text-[11px] text-muted-foreground">Conciliado por {rotuloCriterio[i.criterio].toLowerCase()}</p> : null}
             {i.descricaoNota && i.descricaoPedido ? <p className="mt-1 break-words text-xs text-muted-foreground">Pedido: {i.descricaoPedido}</p> : null}
             <dl className="mt-2 grid grid-cols-2 gap-2 text-xs">
               <div>

@@ -4,6 +4,8 @@ export type NotaItem = {
   descricao: string;
   ean: string | null;
   dun: string | null;
+  /** Todos os códigos de barras (EAN/DUN) informados no item. */
+  gtins?: string[];
   embalagem: string;
   qtdComercial: number;
   unidadeTrib: string;
@@ -82,6 +84,7 @@ export function parseNotaXml(xml: string): NotaFiscal {
       descricao: text(prod, "xProd"),
       ean,
       dun,
+      gtins: unicos,
       embalagem: text(prod, "uCom").toUpperCase(),
       qtdComercial: num(text(prod, "qCom")),
       unidadeTrib: text(prod, "uTrib").toUpperCase(),

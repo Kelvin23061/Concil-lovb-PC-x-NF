@@ -33,3 +33,28 @@ test("preenche os valores do detalhe do item (unitário e total, nota e pedido)"
   assert.equal(item?.seqPedido, "354031");
   assert.equal(item?.codigoNota, "16151");
 });
+const base = { numero: "1", serie: "1", chave: "", emitente: "T", cnpj: "", emissao: null, valorTotal: 0 };
+const ped = { numero: "1", fornecedor: "T", cnpj: "", emissao: null, valorTotal: 0 };
+
+test("concilia quando o pedido tem mais de um código de barras", () => {
+  const r = conciliar(
+    { ...base, itens: [{ seq: 1, codigo: "9", descricao: "X", ean: "7890000000017", dun: null, embalagem: "UN", qtdComercial: 2, unidadeTrib: "UN", qtdTributavel: 2, valorTotal: 2 }] },
+    { ...ped, itens: [{ seq: "1", descricao: "Y", ean: "7890000000024", gtins: ["7890000000024", "7890000000017"], embalagem: "UN", embalagemFator: 1, quantidade: 2, valorUnitario: 1 }] },
+  );
+  assert.equal(r.itens[0]?.criterio, "codigo_barras");
+  assert.equal(r.itens[0]?.situacao, "conforme");
+});
+
+test("concilia pela referência e pela descrição quando o código de barras não bate", () => {
+  const r = conciliar(
+    { ...base, itens: [
+      { seq: 1, codigo: "6852", descricao: "Outro nome", ean: null, dun: null, embalagem: "UN", qtdComercial: 1, unidadeTrib: "UN", qtdTributavel: 1, valorTotal: 1 },
+      { seq: 2, codigo: "1", descricao: "SHAMPOO VITAY NOVEX 300ML", ean: null, dun: null, embalagem: "UN", qtdComercial: 1, unidadeTrib: "UN", qtdTributavel: 1, valorTotal: 1 },
+    ] },
+    { ...ped, itens: [
+      { seq: "10", descricao: "CREME NOVEX 1KG 6852", ean: "7896013568520", embalagem: "UN", embalagemFator: 1, quantidade: 1, valorUnitario: 1 },
+      { seq: "11", descricao: "SHAMPOO NOVEX VITAY 300ML", ean: "7896013569817", embalagem: "UN", embalagemFator: 1, quantidade: 1, valorUnitario: 1 },
+    ] },
+  );
+  assert.deepEqual(r.itens.map((i) => [i.criterio, i.seqPedido]), [["referencia", "10"], ["descricao", "11"]]);
+});

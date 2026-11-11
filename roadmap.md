@@ -6,3 +6,5 @@
 - [x] Detalhe do item ao clicar na linha da conciliação: pedido × nota lado a lado e comparação de valores (imagem anexada).
 - [x] Exibir valores unitários e totais do pedido na lista e CSV, com fornecedor e número da nota no cabeçalho; verificar a conferência completa.
 - [x] Exibir a referência dos códigos internos da nota e do pedido na conciliação, busca, detalhe e CSV; verificar no painel.
+- [x] Conciliar por código de barras (vários EAN/DUN), referência ou descrição.
+- [x] Botão "Ver" para abrir o detalhamento do item.
