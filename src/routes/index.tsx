@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { parseNotaXml, type NotaFiscal } from "@/lib/nfe";
 import { lerPedidoPdf, type Pedido } from "@/lib/pedido";
-import { conciliar, type Resultado } from "@/lib/conciliacao";
+import { conciliar, fmt, type Resultado } from "@/lib/conciliacao";
 import {
   listarHistorico,
   removerConferencia,
@@ -132,9 +132,9 @@ function Pagina() {
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4">
           <Logo />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-semibold tracking-tight">Conciliador Fiscal</h1>
-            <p className="truncate text-xs text-muted-foreground">
-              Nota fiscal × pedido de compras por EAN e DUN
+            <h1 className="text-lg font-semibold">Conciliador Fiscal</h1>
+            <p className="break-words text-xs text-muted-foreground">
+              {nota ? `Fornecedor: ${nota.emitente} · NF ${nota.numero}${nota.serie ? ` / Série ${nota.serie}` : ""}` : "Nota fiscal × pedido de compras por EAN e DUN"}
             </p>
           </div>
           <ThemeToggle />
@@ -219,6 +219,26 @@ function Pagina() {
 
             {resultado && nota ? (
               <div className="space-y-5">
+                <section aria-label="Identificação da conferência" className="border-b pb-4">
+                  <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Fornecedor</dt>
+                      <dd className="mt-1 break-words text-sm font-semibold">{nota.emitente || pedido?.fornecedor || "—"}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Nota fiscal / Série</dt>
+                      <dd className="mt-1 font-mono text-sm">{nota.numero} / {nota.serie || "—"}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Pedido de compras</dt>
+                      <dd className="mt-1 font-mono text-sm">{pedido?.numero || "—"}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted-foreground">Valor total do pedido</dt>
+                      <dd className="mt-1 font-mono text-sm font-semibold">R$ {fmt(pedido?.valorTotal)}</dd>
+                    </div>
+                  </dl>
+                </section>
                 <CartoesResumo resultado={resultado} valorNota={nota.valorTotal} />
                 <TabelaItens itens={resultado.itens} nota={nota} pedido={pedido} />
               </div>

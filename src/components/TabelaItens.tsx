@@ -110,6 +110,8 @@ export function TabelaItens({
       "Unidades pedido",
       "Dif caixas",
       "Dif unidades",
+      "Valor unitario pedido",
+      "Valor total pedido",
       "Situacao",
     ];
     const linhas = itens.map((i) =>
@@ -126,6 +128,8 @@ export function TabelaItens({
         i.unidadesPedido ?? "",
         i.difCaixas ?? "",
         i.difUnidades ?? "",
+        i.valorUnitarioPedido == null ? "" : fmt(i.valorUnitarioPedido, 4),
+        i.valorTotalPedido == null ? "" : fmt(i.valorTotalPedido),
         rotuloSituacao[i.situacao],
       ]
         .map((c) => `"${String(c).replace(/"/g, '""')}"`)
@@ -181,6 +185,8 @@ export function TabelaItens({
               <th className="px-3 py-2 text-left font-semibold">Embalagem</th>
               <th className="px-3 py-2 text-right font-semibold">Caixas</th>
               <th className="px-3 py-2 text-right font-semibold">Unidades</th>
+              <th className="px-3 py-2 text-right font-semibold">Unitário pedido (R$)</th>
+              <th className="px-3 py-2 text-right font-semibold">Total pedido (R$)</th>
               <th className="px-3 py-2 text-left font-semibold">Situação</th>
             </tr>
           </thead>
@@ -192,7 +198,7 @@ export function TabelaItens({
                 className="cursor-pointer border-t transition-colors hover:bg-accent/30"
                 title="Clique para ver o detalhe do item"
               >
-                <td className="max-w-[22rem] px-3 py-2">
+                <td className="max-w-[16rem] px-3 py-2">
                   <p className="truncate font-medium" title={i.descricaoNota ?? ""}>
                     {i.descricaoNota ?? "—"}
                   </p>
@@ -228,6 +234,12 @@ export function TabelaItens({
                       {fmt(i.difUnidades)})
                     </span>
                   ) : null}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-xs tabular-nums">
+                  {fmt(i.valorUnitarioPedido, 4)}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-xs tabular-nums">
+                  {fmt(i.valorTotalPedido)}
                 </td>
                 <td className="px-3 py-2">
                   <Etiqueta situacao={i.situacao} />
@@ -277,6 +289,16 @@ export function TabelaItens({
                 pedido={fmt(i.unidadesPedido)}
                 dif={i.difUnidades}
               />
+              <dl className="mt-2 grid grid-cols-2 gap-2 border-t pt-2 text-xs">
+                <div>
+                  <dt className="text-muted-foreground">Unitário pedido (R$)</dt>
+                  <dd className="font-mono tabular-nums">{fmt(i.valorUnitarioPedido, 4)}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Total pedido (R$)</dt>
+                  <dd className="font-mono font-semibold tabular-nums">{fmt(i.valorTotalPedido)}</dd>
+                </div>
+              </dl>
             </div>
           </div>
         ))}
