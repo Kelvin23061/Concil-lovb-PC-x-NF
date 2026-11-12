@@ -18,6 +18,7 @@ import type { Pedido } from "@/lib/pedido";
 const ordem: Situacao[] = [
   "qtd_divergente",
   "emb_divergente",
+  "valor_divergente",
   "so_na_nota",
   "so_no_pedido",
   "conforme",
@@ -49,7 +50,7 @@ function Par({
 }) {
   return (
     <div className="text-xs">
-      <span className="text-muted-foreground">{rotulo}: </span>
+      {rotulo ? <span className="text-muted-foreground">{rotulo}: </span> : null}
       <span className="font-mono tabular-nums">{nota}</span>
       <span className="text-muted-foreground"> × </span>
       <span className="font-mono tabular-nums">{pedido}</span>
@@ -115,6 +116,11 @@ export function TabelaItens({
       "Dif unidades",
       "Valor unitario pedido",
       "Valor total pedido",
+      "Valor unitario nota (base pedido)",
+      "Valor total nota",
+      "Dif valor unitario (nota - pedido)",
+      "Dif valor total (nota - pedido)",
+      "Valores",
       "Situacao",
     ];
     const linhas = itens.map((i) =>
@@ -135,6 +141,11 @@ export function TabelaItens({
         i.difUnidades ?? "",
         i.valorUnitarioPedido == null ? "" : fmt(i.valorUnitarioPedido, 4),
         i.valorTotalPedido == null ? "" : fmt(i.valorTotalPedido),
+        i.valorUnitarioNota == null ? "" : fmt(i.valorUnitarioNota, 4),
+        i.valorTotalNota == null ? "" : fmt(i.valorTotalNota),
+        i.difValorUnitario == null ? "" : fmt(i.difValorUnitario, 4),
+        i.difValorTotal == null ? "" : fmt(i.difValorTotal),
+        i.difValorTotal == null ? "Não comparado" : i.valoresDivergentes ? "Divergentes" : "Conferem",
         rotuloSituacao[i.situacao],
       ]
         .map((c) => `"${String(c).replace(/"/g, '""')}"`)
@@ -192,8 +203,8 @@ export function TabelaItens({
               <th className="px-3 py-2 text-left font-semibold">Embalagem</th>
               <th className="px-3 py-2 text-right font-semibold">Caixas</th>
               <th className="px-3 py-2 text-right font-semibold">Unidades</th>
-              <th className="px-3 py-2 text-right font-semibold">Unitário pedido (R$)</th>
-              <th className="px-3 py-2 text-right font-semibold">Total pedido (R$)</th>
+              <th className="px-3 py-2 text-right font-semibold">Unitário (R$)<span className="block normal-case">Nota × Pedido · base pedido</span></th>
+              <th className="px-3 py-2 text-right font-semibold">Total (R$)<span className="block normal-case">Nota × Pedido</span></th>
               <th className="px-3 py-2 text-left font-semibold">Situação</th>
               <th className="px-3 py-2 text-right font-semibold"><span className="sr-only">Detalhe</span></th>
             </tr>
@@ -248,13 +259,15 @@ export function TabelaItens({
                   ) : null}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-xs tabular-nums">
-                  {fmt(i.valorUnitarioPedido, 4)}
+                  <Par rotulo="" nota={fmt(i.valorUnitarioNota, 4)} pedido={fmt(i.valorUnitarioPedido, 4)} />
+                  {i.difValorUnitario ? <p className="font-semibold text-destructive">Δ {fmt(i.difValorUnitario, 4)}</p> : null}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-xs tabular-nums">
-                  {fmt(i.valorTotalPedido)}
+                  <Par rotulo="" nota={fmt(i.valorTotalNota)} pedido={fmt(i.valorTotalPedido)} dif={i.difValorTotal} />
                 </td>
                 <td className="px-3 py-2">
                   <Etiqueta situacao={i.situacao} />
+                  {i.valoresDivergentes && i.situacao !== "valor_divergente" ? <p className="mt-1 text-xs font-semibold text-destructive">Valor divergente</p> : null}
                   {i.criterio ? (
                     <p className="mt-1 whitespace-nowrap text-[11px] text-muted-foreground">Por {rotuloCriterio[i.criterio].toLowerCase()}</p>
                   ) : null}
@@ -349,6 +362,12 @@ export function TabelaItens({
                   <dd className="font-mono font-semibold tabular-nums">{fmt(i.valorTotalPedido)}</dd>
                 </div>
               </dl>
+              <div className="mt-2 space-y-1 border-t pt-2">
+                <Par rotulo="Unitário nota × pedido (R$, base pedido)" nota={fmt(i.valorUnitarioNota, 4)} pedido={fmt(i.valorUnitarioPedido, 4)} />
+                {i.difValorUnitario ? <p className="text-xs font-semibold text-destructive">Diferença unitária: R$ {fmt(i.difValorUnitario, 4)}</p> : null}
+                <Par rotulo="Total nota × pedido (R$)" nota={fmt(i.valorTotalNota)} pedido={fmt(i.valorTotalPedido)} dif={i.difValorTotal} />
+                {i.difValorTotal != null ? <p className={cn("text-xs font-semibold", i.valoresDivergentes ? "text-destructive" : "text-ok")}>{i.valoresDivergentes ? "Valores divergentes" : "Valores conferem"}</p> : null}
+              </div>
             </div>
           </div>
         ))}

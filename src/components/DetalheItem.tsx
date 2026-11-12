@@ -11,6 +11,7 @@ import {
   corSituacao,
   fmt,
   rotuloSituacao,
+  rotuloCriterio,
   type ItemConciliado,
 } from "@/lib/conciliacao";
 import type { NotaFiscal } from "@/lib/nfe";
@@ -72,14 +73,8 @@ function LinhaComparacao({
 export function DetalheItem({ item, indice, total, nota, pedido, onFechar }: Props) {
   const aberto = item !== null;
   // Diferença sempre no sentido Pedido − Nota, como no relatório de referência.
-  const difUnit =
-    item?.valorUnitarioNota != null && item?.valorUnitarioPedido != null
-      ? Math.round((item.valorUnitarioPedido - item.valorUnitarioNota) * 1000) / 1000
-      : null;
-  const difTotal =
-    item?.valorTotalNota != null && item?.valorTotalPedido != null
-      ? Math.round((item.valorTotalPedido - item.valorTotalNota) * 100) / 100
-      : null;
+  const difUnit = item?.difValorUnitario != null ? -item.difValorUnitario : null;
+  const difTotal = item?.difValorTotal != null ? -item.difValorTotal : null;
   const TOL = 0.001;
 
   return (
@@ -90,7 +85,7 @@ export function DetalheItem({ item, indice, total, nota, pedido, onFechar }: Pro
             <DialogHeader>
               <DialogDescription className="text-[11px] font-semibold uppercase tracking-wider">
                 Item {indice + 1} de {total}
-                {item.ean ? " · vínculo por código de barras" : ""}
+                {item.criterio ? ` · vínculo por ${rotuloCriterio[item.criterio].toLowerCase()}` : ""}
               </DialogDescription>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <DialogTitle className="text-base leading-snug">
@@ -146,8 +141,9 @@ export function DetalheItem({ item, indice, total, nota, pedido, onFechar }: Pro
             </div>
 
             {/* Comparação de valores */}
-            <section className="overflow-hidden rounded-xl border bg-card">
+            <section className="overflow-x-auto rounded-xl border bg-card">
               <p className="border-b px-4 py-2.5 text-sm font-semibold">Comparação de valores</p>
+              {item.difValorTotal != null ? <p className={cn("px-4 py-2 text-sm font-semibold", item.valoresDivergentes ? "text-destructive" : "text-ok")}>{item.valoresDivergentes ? "Valores divergentes" : "Valores conferem"}</p> : null}
               <table className="w-full border-collapse">
                 <thead className="bg-secondary/60 text-[10px] uppercase tracking-wider text-muted-foreground">
                   <tr>
@@ -173,11 +169,11 @@ export function DetalheItem({ item, indice, total, nota, pedido, onFechar }: Pro
                     divergente={item.difUnidades !== null && Math.abs(item.difUnidades) > TOL}
                   />
                   <LinhaComparacao
-                    rotulo="Valor unitário"
+                    rotulo="Valor unitário (R$, base pedido)"
                     pedido={item.valorUnitarioPedido}
                     nota={item.valorUnitarioNota}
                     diferenca={difUnit}
-                    divergente={difUnit !== null && Math.abs(difUnit) > TOL}
+                    divergente={difUnit !== null && difUnit !== 0}
                     dec={4}
                   />
                   <LinhaComparacao
@@ -185,7 +181,7 @@ export function DetalheItem({ item, indice, total, nota, pedido, onFechar }: Pro
                     pedido={item.valorTotalPedido}
                     nota={item.valorTotalNota}
                     diferenca={difTotal}
-                    divergente={difTotal !== null && Math.abs(difTotal) > 0.01}
+                    divergente={difTotal !== null && difTotal !== 0}
                   />
                 </tbody>
               </table>

@@ -12,3 +12,5 @@
 - Parse Concinco PDF rows before their following EAN line and keep wrapped product descriptions, because quantities and packaging precede the barcode.
 - Keep reconciliation browser-only with versioned local history; the no-login screen must not depend on authenticated backend reads.
 - Discard outdated asynchronous file reads when inputs change, so removed files cannot restore stale results.
+- Compare invoice unit prices on the order packaging basis, with four decimal places for unit prices and cents for totals, because box and individual-unit prices are not directly comparable.
+- Recompute saved reconciliation results from their source documents when reading local history, so updated comparison rules also apply to older records.

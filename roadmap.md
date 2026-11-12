@@ -8,3 +8,5 @@
 - [x] Exibir a referência dos códigos internos da nota e do pedido na conciliação, busca, detalhe e CSV; verificar no painel.
 - [x] Conciliar por código de barras (vários EAN/DUN), referência ou descrição.
 - [x] Botão "Ver" para abrir o detalhamento do item.
+- [x] Comparar valores do pedido e da nota na mesma base de embalagem, sinalizar diferenças e verificar o botão Ver.
+- [x] Adicionar Limpar sem apagar o histórico e validar uma nova conciliação.

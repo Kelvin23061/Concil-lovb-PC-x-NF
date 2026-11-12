@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { conciliar } from "./conciliacao";
+import { conciliar, diferencaValor } from "./conciliacao";
 import type { NotaFiscal } from "./nfe";
 import type { Pedido } from "./pedido";
 
@@ -26,15 +26,65 @@ test("preenche os valores do detalhe do item (unitário e total, nota e pedido)"
     { seq: "354031", descricao: "Creme", ean: "7896013568520", embalagem: "CX 6", embalagemFator: 6, quantidade: 3, valorUnitario: 89.1 },
   ] };
   const item = conciliar(nota, pedido).itens[0];
-  assert.equal(item?.valorUnitarioNota, 14.85);
+  assert.equal(item?.valorUnitarioNota, 89.1);
   assert.equal(item?.valorTotalNota, 267.3);
   assert.equal(item?.valorUnitarioPedido, 89.1);
   assert.equal(item?.valorTotalPedido, 267.3);
   assert.equal(item?.seqPedido, "354031");
   assert.equal(item?.codigoNota, "16151");
+  assert.equal(item?.valoresDivergentes, false);
+  assert.equal(item?.situacao, "conforme");
 });
 const base = { numero: "1", serie: "1", chave: "", emitente: "T", cnpj: "", emissao: null, valorTotal: 0 };
 const ped = { numero: "1", fornecedor: "T", cnpj: "", emissao: null, valorTotal: 0 };
+
+function compararValores(totalNota: number, qtdNota = 3, unitPedido = 89.1) {
+  return conciliar(
+    { ...base, itens: [{ seq: 1, codigo: "1", descricao: "Creme", ean: "7896013568520", dun: null, embalagem: "CX", qtdComercial: qtdNota, unidadeTrib: "UN", qtdTributavel: qtdNota * 6, valorTotal: totalNota }] },
+    { ...ped, itens: [{ seq: "1", descricao: "Creme", ean: "7896013568520", embalagem: "CX 6", embalagemFator: 6, quantidade: 3, valorUnitario: unitPedido }] },
+  );
+}
+
+test("sinaliza preço diferente com código, embalagem e quantidade iguais", () => {
+  const r = compararValores(270);
+  assert.equal(r.itens[0]?.situacao, "valor_divergente");
+  assert.equal(r.itens[0]?.difValorUnitario, 0.9);
+  assert.equal(r.itens[0]?.difValorTotal, 2.7);
+  assert.equal(r.divergentes, 1);
+  assert.equal(r.conformes, 0);
+});
+
+test("sinaliza um centavo de diferença no total", () => {
+  const item = compararValores(267.31).itens[0];
+  assert.equal(item?.difValorTotal, 0.01);
+  assert.equal(item?.valoresDivergentes, true);
+});
+
+test("sinaliza valores mesmo quando a quantidade também diverge", () => {
+  const item = compararValores(180, 2).itens[0];
+  assert.equal(item?.situacao, "qtd_divergente");
+  assert.equal(item?.valoresDivergentes, true);
+  assert.equal(item?.difValorTotal, -87.3);
+});
+
+test("compara preços unitários com quatro casas e totais com centavos", () => {
+  const item = compararValores(267.3003, 3, 89.1001).itens[0];
+  assert.equal(item?.valorUnitarioPedido, 89.1001);
+  assert.equal(item?.valorUnitarioNota, 89.1001);
+  assert.equal(item?.situacao, "conforme");
+  assert.equal(diferencaValor(267.31, 267.3), 0.01);
+  assert.equal(diferencaValor(0.1 + 0.2, 0.3), 0);
+});
+
+test("compara nota em unidades com preço do pedido por caixa", () => {
+  const r = conciliar(
+    { ...base, itens: [{ seq: 1, codigo: "1", descricao: "Creme", ean: "7896013568520", dun: null, embalagem: "UN", qtdComercial: 18, unidadeTrib: "UN", qtdTributavel: 18, valorTotal: 267.3 }] },
+    { ...ped, itens: [{ seq: "1", descricao: "Creme", ean: "7896013568520", embalagem: "CX 6", embalagemFator: 6, quantidade: 3, valorUnitario: 89.1 }] },
+  );
+  assert.equal(r.itens[0]?.valorUnitarioNota, 89.1);
+  assert.equal(r.itens[0]?.difValorUnitario, 0);
+  assert.equal(r.itens[0]?.valoresDivergentes, false);
+});
 
 test("concilia quando o pedido tem mais de um código de barras", () => {
   const r = conciliar(

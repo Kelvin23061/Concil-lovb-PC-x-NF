@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { FileCode2, FileText, History, Loader2, ScanSearch } from "lucide-react";
+import { FileCode2, FileText, History, Loader2, ScanSearch, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import { Logo } from "@/components/Logo";
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { parseNotaXml, type NotaFiscal } from "@/lib/nfe";
 import { lerPedidoPdf, type Pedido } from "@/lib/pedido";
-import { conciliar, fmt, type Resultado } from "@/lib/conciliacao";
+import { conciliar, diferencaValor, fmt, type Resultado } from "@/lib/conciliacao";
 import {
   listarHistorico,
   removerConferencia,
@@ -56,6 +56,21 @@ function Pagina() {
   const [aba, setAba] = useState("conferencia");
   const leituraXml = useRef(0);
   const leituraPdf = useRef(0);
+  const [novaConferencia, setNovaConferencia] = useState(0);
+
+  function limpar() {
+    ++leituraXml.current;
+    ++leituraPdf.current;
+    setXml(null);
+    setPdf(null);
+    setNota(null);
+    setPedido(null);
+    setResultado(null);
+    setErroXml(null);
+    setErroPdf(null);
+    setProcessando(false);
+    setNovaConferencia((valor) => valor + 1);
+  }
 
   useEffect(() => {
     setHistorico(listarHistorico());
@@ -155,7 +170,7 @@ function Pagina() {
           </TabsList>
 
           <TabsContent value="conferencia" className="mt-5 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div key={novaConferencia} className="grid gap-4 md:grid-cols-2">
               <DropZoneArquivo
                 titulo="XML da nota fiscal"
                 descricao="Arquivo .xml da NF-e do fornecedor"
@@ -212,6 +227,9 @@ function Pagina() {
                   </>
                 )}
               </Button>
+              <Button variant="outline" size="lg" onClick={limpar} disabled={!xml && !pdf && !nota && !pedido && !processando}>
+                <RotateCcw className="size-4" /> Limpar
+              </Button>
               <p className="text-xs text-muted-foreground">
                 O cruzamento usa o EAN; quando a nota traz DUN e EAN, o DUN fica como apoio.
               </p>
@@ -238,6 +256,13 @@ function Pagina() {
                       <dd className="mt-1 font-mono text-sm font-semibold">R$ {fmt(pedido?.valorTotal)}</dd>
                     </div>
                   </dl>
+                  {pedido ? (
+                    <p className={`mt-4 text-sm font-semibold ${diferencaValor(nota.valorTotal, pedido.valorTotal) !== 0 ? "text-destructive" : "text-ok"}`}>
+                      {diferencaValor(nota.valorTotal, pedido.valorTotal) !== 0
+                        ? `Totais dos documentos divergentes · Nota: R$ ${fmt(nota.valorTotal)} · Pedido: R$ ${fmt(pedido.valorTotal)} · Diferença (nota − pedido): R$ ${fmt(diferencaValor(nota.valorTotal, pedido.valorTotal))}`
+                        : "Totais dos documentos conferem"}
+                    </p>
+                  ) : null}
                 </section>
                 <CartoesResumo resultado={resultado} valorNota={nota.valorTotal} />
                 <TabelaItens itens={resultado.itens} nota={nota} pedido={pedido} />

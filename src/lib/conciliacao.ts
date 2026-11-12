@@ -5,6 +5,7 @@ export type Situacao =
   | "conforme"
   | "qtd_divergente"
   | "emb_divergente"
+  | "valor_divergente"
   | "so_na_nota"
   | "so_no_pedido";
 
@@ -41,6 +42,9 @@ export type ItemConciliado = {
   valorTotalNota: number | null;
   valorUnitarioPedido: number | null;
   valorTotalPedido: number | null;
+  difValorUnitario: number | null;
+  difValorTotal: number | null;
+  valoresDivergentes: boolean;
 };
 
 export type Resultado = {
@@ -52,6 +56,12 @@ export type Resultado = {
 
 const TOL = 0.001;
 const arred = (n: number) => Math.round(n * 1000) / 1000;
+const arredValor = (n: number, dec: number) => Math.round((n + Number.EPSILON) * 10 ** dec) / 10 ** dec;
+
+/** Diferença Nota − Pedido na precisão exibida. */
+export function diferencaValor(nota: number, pedido: number, dec = 2) {
+  return (Math.round((nota + Number.EPSILON) * 10 ** dec) - Math.round((pedido + Number.EPSILON) * 10 ** dec)) / 10 ** dec;
+}
 const unidadesSoltas = new Set(["UN", "UND", "UNID", "PC", "PÇ", "PECA", "KG", "LT", "L", "ML"]);
 
 function embFatorPedido(item: PedidoItem) {
@@ -195,10 +205,13 @@ export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
         seqPedido: null,
         codigoNota: nItem.codigo,
         unidadeTrib: nItem.unidadeTrib,
-        valorUnitarioNota: nItem.qtdTributavel > 0 ? arred(nItem.valorTotal / nItem.qtdTributavel) : null,
+        valorUnitarioNota: q.caixas > 0 ? arredValor(nItem.valorTotal / q.caixas, 4) : null,
         valorTotalNota: arred(nItem.valorTotal),
         valorUnitarioPedido: null,
         valorTotalPedido: null,
+        difValorUnitario: null,
+        difValorTotal: null,
+        valoresDivergentes: false,
       });
       continue;
     }
@@ -211,13 +224,22 @@ export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
     const difCaixas = arred(q.caixas - caixasPedido);
     const difUnidades = arred(q.unidades - unidadesPedido);
     const embDiferente = Math.abs(q.fator - fatorPedido) > TOL;
+    const valorUnitarioNota = q.caixas > 0 ? arredValor(nItem.valorTotal / q.caixas, 4) : null;
+    const valorUnitarioPedido = arredValor(pItem.valorUnitario, 4);
+    const valorTotalNota = arredValor(nItem.valorTotal, 2);
+    const valorTotalPedido = arredValor(pItem.quantidade * pItem.valorUnitario, 2);
+    const difValorUnitario = valorUnitarioNota === null ? null : diferencaValor(valorUnitarioNota, valorUnitarioPedido, 4);
+    const difValorTotal = diferencaValor(valorTotalNota, valorTotalPedido);
+    const valoresDivergentes = (difValorUnitario !== null && difValorUnitario !== 0) || difValorTotal !== 0;
 
     const situacao: Situacao =
       Math.abs(difCaixas) > TOL || Math.abs(difUnidades) > TOL
         ? "qtd_divergente"
         : embDiferente
           ? "emb_divergente"
-          : "conforme";
+          : valoresDivergentes
+            ? "valor_divergente"
+            : "conforme";
 
     itens.push({
       ean: nItem.ean ?? pItem.ean,
@@ -238,10 +260,13 @@ export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
       seqPedido: pItem.seq,
       codigoNota: nItem.codigo,
       unidadeTrib: nItem.unidadeTrib,
-      valorUnitarioNota: nItem.qtdTributavel > 0 ? arred(nItem.valorTotal / nItem.qtdTributavel) : null,
-      valorTotalNota: arred(nItem.valorTotal),
-      valorUnitarioPedido: arred(pItem.valorUnitario),
-      valorTotalPedido: arred(pItem.quantidade * pItem.valorUnitario),
+      valorUnitarioNota,
+      valorTotalNota,
+      valorUnitarioPedido,
+      valorTotalPedido,
+      difValorUnitario,
+      difValorTotal,
+      valoresDivergentes,
     });
   }
 
@@ -271,6 +296,9 @@ export function conciliar(nota: NotaFiscal, pedido: Pedido): Resultado {
       valorTotalNota: null,
       valorUnitarioPedido: arred(pItem.valorUnitario),
       valorTotalPedido: arred(pItem.quantidade * pItem.valorUnitario),
+      difValorUnitario: null,
+      difValorTotal: null,
+      valoresDivergentes: false,
     });
   }
 
@@ -287,6 +315,7 @@ export const rotuloSituacao: Record<Situacao, string> = {
   conforme: "Conforme",
   qtd_divergente: "Quantidade divergente",
   emb_divergente: "Embalagem divergente",
+  valor_divergente: "Valor divergente",
   so_na_nota: "Só na nota",
   so_no_pedido: "Só no pedido",
 };
@@ -295,6 +324,7 @@ export const corSituacao: Record<Situacao, string> = {
   conforme: "bg-ok/15 text-ok border-ok/30",
   qtd_divergente: "bg-destructive/15 text-destructive border-destructive/30",
   emb_divergente: "bg-warn/15 text-warn border-warn/30",
+  valor_divergente: "bg-destructive/15 text-destructive border-destructive/30",
   so_na_nota: "bg-destructive/15 text-destructive border-destructive/30",
   so_no_pedido: "bg-warn/15 text-warn border-warn/30",
 };

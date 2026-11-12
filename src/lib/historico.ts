@@ -1,6 +1,6 @@
 import type { NotaFiscal } from "./nfe";
 import type { Pedido } from "./pedido";
-import type { Resultado } from "./conciliacao";
+import { conciliar, type Resultado } from "./conciliacao";
 
 export type Conferencia = {
   id: string;
@@ -26,6 +26,7 @@ export function listarHistorico(): Conferencia[] {
     const limite = Date.now() - SETE_DIAS;
     const validas = lista
       .filter((c) => c && new Date(c.salvoEm).getTime() >= limite)
+      .map((c) => ({ ...c, resultado: conciliar(c.nota, c.pedido) }))
       .sort((a, b) => (a.salvoEm < b.salvoEm ? 1 : -1));
     if (validas.length !== lista.length) gravar(validas);
     return validas;
