@@ -10,3 +10,4 @@
 - [x] Botão "Ver" para abrir o detalhamento do item.
 - [x] Comparar valores do pedido e da nota na mesma base de embalagem, sinalizar diferenças e verificar o botão Ver.
 - [x] Adicionar Limpar sem apagar o histórico e validar uma nova conciliação.
+- [x] Renomear para Conciliação Fiscal e ocultar o aviso de totais dos documentos divergentes no painel.

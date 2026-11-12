@@ -81,12 +81,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Conciliador NF-e x Pedido" },
+      { title: "Conciliação Fiscal" },
       {
         name: "description",
         content: "Compare o XML da nota fiscal com o pedido de compras por EAN/DUN.",
       },
-      { property: "og:title", content: "Conciliador NF-e x Pedido" },
+      { property: "og:title", content: "Conciliação Fiscal" },
       {
         property: "og:description",
         content: "Compare o XML da nota fiscal com o pedido de compras por EAN/DUN.",

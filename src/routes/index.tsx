@@ -24,13 +24,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Conciliador NF-e x Pedido de Compras" },
+      { title: "Conciliação Fiscal — NF-e × Pedido de Compras" },
       {
         name: "description",
         content:
           "Compare o XML da nota fiscal com o PDF do pedido de compras por EAN e DUN: embalagem, caixas e unidades, com histórico de 7 dias.",
       },
-      { property: "og:title", content: "Conciliador NF-e x Pedido de Compras" },
+      { property: "og:title", content: "Conciliação Fiscal — NF-e × Pedido de Compras" },
       {
         property: "og:description",
         content:
@@ -147,7 +147,7 @@ function Pagina() {
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4">
           <Logo />
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg font-semibold">Conciliador Fiscal</h1>
+            <h1 className="text-lg font-semibold">Conciliação Fiscal</h1>
             <p className="break-words text-xs text-muted-foreground">
               {nota ? `Fornecedor: ${nota.emitente} · NF ${nota.numero}${nota.serie ? ` / Série ${nota.serie}` : ""}` : "Nota fiscal × pedido de compras por EAN e DUN"}
             </p>
@@ -256,11 +256,9 @@ function Pagina() {
                       <dd className="mt-1 font-mono text-sm font-semibold">R$ {fmt(pedido?.valorTotal)}</dd>
                     </div>
                   </dl>
-                  {pedido ? (
-                    <p className={`mt-4 text-sm font-semibold ${diferencaValor(nota.valorTotal, pedido.valorTotal) !== 0 ? "text-destructive" : "text-ok"}`}>
-                      {diferencaValor(nota.valorTotal, pedido.valorTotal) !== 0
-                        ? `Totais dos documentos divergentes · Nota: R$ ${fmt(nota.valorTotal)} · Pedido: R$ ${fmt(pedido.valorTotal)} · Diferença (nota − pedido): R$ ${fmt(diferencaValor(nota.valorTotal, pedido.valorTotal))}`
-                        : "Totais dos documentos conferem"}
+                  {pedido && diferencaValor(nota.valorTotal, pedido.valorTotal) === 0 ? (
+                    <p className="mt-4 text-sm font-semibold text-ok">
+                      Totais dos documentos conferem
                     </p>
                   ) : null}
                 </section>
